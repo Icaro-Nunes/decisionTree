@@ -3,8 +3,36 @@ import math
 import operator
 from unittest import result
 import pandas as pd
-from decision_tree import information_gain
 
+def entropy(df, param):
+  return (
+      reduce(
+          operator.add,
+          map(lambda x: (-1)*(x/len(df))*math.log2(x/len(df)), df[param].value_counts())
+      )
+  )
+
+def conditional_entropy(df: pd.DataFrame, known_param, param):
+  return reduce(
+    operator.add,
+    map(
+      lambda val: (
+          len(
+            df[df[known_param] == val]
+          )
+          *
+          entropy(
+            df[df[known_param] == val],
+            param
+          )
+          /
+          len(df)
+      ), df[known_param].unique()
+    )
+  )
+
+def information_gain(df, known_param, class_axis):
+  return entropy(df, class_axis) - conditional_entropy(df, known_param, class_axis)
 
 def calculate_distribution(x, y, value):
     set = x.join(y)
@@ -29,7 +57,7 @@ def build_tree_node(x_subset, y_subset, unused_features: list):
 
     best_feature = max(
         map(
-        lambda feature: (feature, information_gain(x_subset.join(y_subset), feature, y_subset.name))
+        lambda feature: (feature, information_gain(subset, feature, y_subset.name))
         , unused_features
         )
     )
