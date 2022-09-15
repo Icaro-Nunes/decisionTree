@@ -1,4 +1,5 @@
-from decision_tree import DecisionTree
+from binary_decision_tree import BinaryDecisionTree
+# from decision_tree import CategoricalDecisionTree
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
@@ -20,8 +21,27 @@ data = pd.DataFrame(
 x=data[clmns[:-1]]
 y=data[clmns[-1]]
 lencoder = LabelEncoder()
-y = lencoder.fit_transform(y)
+# y = lencoder.fit(y)
 
-tree = DecisionTree()
+tree = BinaryDecisionTree()
 
-tree.fit(x=data[clmns[:-1]], y=data[clmns[-1]])
+tree.fit(x=x, y=y)
+
+case = (
+    'M', True, False
+)
+
+case = (
+    'F', True, True
+)
+
+result = tree.predict(
+    {
+        clmns[0]: case[0],
+        clmns[1]: case[1],
+        clmns[2]: case[2]
+    }
+)
+
+print(result)
+print("end")
