@@ -1,7 +1,7 @@
 from functools import reduce
 import math
 import operator
-
+import pandas as pd
 
 def entropy(df, param):
   return (
@@ -60,10 +60,13 @@ class DecisionTreeNode():
     return self.children[point[self.feature]].visit(point)
 
 
-class DecisionTree():
+class CategoricalDecisionTree():
   def __init__(self):
     self.root = None
     self.currentNode = None
+
+  def predict(self, x):
+    return self.root.visit(x)
 
   def fit(self, x=None, y=None):
     # if x==None:
@@ -90,7 +93,7 @@ class DecisionTree():
         map(
           lambda feature: (feature, information_gain(x.join(y), feature, y.name))
           , unused_features
-        ), axis=1
+        )
       )
 
       unused_features.remove(best_feature[0])
@@ -101,7 +104,7 @@ class DecisionTree():
         else:
           self.root = DecisionTreeNode(best_feature[0])
       else:
-        self.currentNode
-
-
-
+        if len(unused_features) == 0:
+          self.currentNode = DecisionTreeNode(terminal=True)
+        else:
+          self.currentNode = DecisionTreeNode(best_feature[0])
