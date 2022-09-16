@@ -63,9 +63,9 @@ class BinaryDecisionTree():
 
     def __build_tree_node(self, x_subset, y_subset, unused_features: list):
         subset = x_subset.join(y_subset)
-        distribution = calculate_distribution(x_subset, y_subset, 'Sim')
+        distribution = calculate_distribution(x_subset, y_subset, self.labels[0])
 
-        estimated_label = 'Sim' if distribution > 0.5 else 'Não'
+        estimated_label = self.labels[0] if distribution > 0.5 else self.labels[1]
 
         if len(unused_features) == 0:
             return DecisionTreeTerminalNode(
@@ -101,7 +101,15 @@ class BinaryDecisionTree():
             children=children
         )
     
-    def fit(self, x: pd.DataFrame, y: pd.Series):
+    def fit(self, x: pd.DataFrame, y, labels=None):
+        if labels == None:
+            if type(y) == pd.Series:
+                self.labels = list(y.unique())
+            else:
+                self.labels = reduce(operator.eq, y)
+        else:
+            self.labels = labels
+
         self.root = self.__build_tree_node(x, y, list(x))
         
     
