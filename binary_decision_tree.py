@@ -39,7 +39,7 @@ def calculate_distribution(x, y, value):
     return float(len(set[set[y.name] == value]))/len(set)
 
 class DecisionTreeNode():
-    def __init__(self, feature , children):
+    def __init__(self, feature , children: dict):
         self.feature = feature
         self.children = children
 
@@ -48,12 +48,25 @@ class DecisionTreeNode():
             x[self.feature]
         ].visit(x)
 
+    def append_to_string_tree(self, string_tree, parent_value=None, depth=0):
+        for child in self.children.values():
+            child.append_to_string_tree()
+
+
 class DecisionTreeTerminalNode():
     def __init__(self, label):
         self.label = label
     
     def visit(self, x):
         return self.label
+
+    def append_to_string_tree(self, string_tree: dict, parent_value=None, depth=0):
+        info = f"({parent_value}){self.label}"
+
+        if string_tree.get(depth, None) == None:
+            string_tree[depth] = info
+        else:
+            string_tree
 
 class BinaryDecisionTree():
     def __init__(self):
@@ -115,3 +128,9 @@ class BinaryDecisionTree():
     
     def predict(self, x):
         return self.root.visit(x)
+
+    def print(self):
+        string_tree = {}
+        self.root.append_to_stirng_tree(string_tree)    
+
+
