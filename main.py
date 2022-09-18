@@ -44,4 +44,7 @@ result = tree.predict(
 )
 
 print(result)
+
+tree.print()
+
 print("end")
