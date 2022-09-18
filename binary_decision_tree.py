@@ -42,39 +42,29 @@ class DecisionTreeNode():
     def __init__(self, feature , children: dict):
         self.feature = feature
         self.children = children
+        self.string_width = None
 
     def visit(self, x):
         return self.children[
             x[self.feature]
         ].visit(x)
 
-    def get_string_and_children_width(self, value,string_tree: dict, depth=0):
-        widths = [child.get_string_and_children_width(val, string_tree, depth=depth+1) for val, child in self.children.items()]
-        info = f"({value}){self.feature}"
-        result = (info, max(
-            len(info) + 2, 
-            reduce(lambda a, b: a[1] + 1 + b[1], widths) + 2
-        ))
-
-        if string_tree.get(depth + 1, None) == None:
-            string_tree[depth + 1] = []
-        
-        string_tree[depth + 1].append(widths)
-
-        return result
-
-
+    def print(self, value, depth=0):
+        print(f"{'    '*depth}({value}){self.feature}")
+        for val, child in self.children.items():
+            child.print(val, depth+1)
 
 class DecisionTreeTerminalNode():
     def __init__(self, label):
         self.label = label
+        self.string_width = None
     
     def visit(self, x):
         return self.label
 
-    def get_string_and_children_width(self, value, string_tree: dict, depth=0):
-        info = f"({value}){self.label}"
-        return (info, len(info))
+    def print(self, value, depth=0):
+        print(f"{'    '*depth}({value}){self.label}")
+
         
 
 class BinaryDecisionTree():
@@ -103,7 +93,7 @@ class BinaryDecisionTree():
             map(
             lambda feature: (feature, information_gain(subset, feature, y_subset.name))
             , unused_features
-            )
+            ), key=lambda it: it[1]
         )
 
         feature = best_feature[0]
@@ -138,16 +128,6 @@ class BinaryDecisionTree():
     def predict(self, x):
         return self.root.visit(x)
 
-    def generate_string_tree(self):
-        if self.string_tree == None:
-            string_tree = {}
-            root_nd = self.root.get_string_and_children_width("root", string_tree)
-            string_tree[0] = [root_nd]
-            self.string_tree = string_tree
-
     def print(self):
-        self.generate_string_tree()
-        depths = sorted(list(self.string_tree))
-        for depth in depths:
-            print(self.string_tree[depth])
+        self.root.print('root')
 
