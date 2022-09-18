@@ -46,5 +46,6 @@ result = tree.predict(
 print(result)
 
 tree.print()
+tree.plot()
 
 print("end")

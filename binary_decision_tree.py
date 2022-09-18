@@ -1,8 +1,10 @@
 from functools import reduce
+from io import BytesIO
 import math
 import operator
-from unittest import result
 import pandas as pd
+import graphviz
+from PIL import Image
 
 def entropy(df, param):
   return (
@@ -53,6 +55,17 @@ class DecisionTreeNode():
         print(f"{'    '*depth}({value}){self.feature}")
         for val, child in self.children.items():
             child.print(val, depth+1)
+        
+    def plot(self, graph: graphviz.Graph, index=0):
+        graph.node(str(index), self.feature)
+        last_index = index
+        child_index = last_index
+        for value, child in self.children.items():
+            child_index = last_index + 1
+            last_index = child.plot(graph, child_index)
+            graph.edge(str(index), str(child_index), str(value))
+        return last_index
+        
 
 class DecisionTreeTerminalNode():
     def __init__(self, label):
@@ -64,6 +77,10 @@ class DecisionTreeTerminalNode():
 
     def print(self, value, depth=0):
         print(f"{'    '*depth}({value}){self.label}")
+    
+    def plot(self, graph: graphviz.Graph, index=0):
+        graph.node(str(index), self.label)
+        return index
 
         
 
@@ -130,4 +147,12 @@ class BinaryDecisionTree():
 
     def print(self):
         self.root.print('root')
+    
+    def plot(self):
+        graph = graphviz.Graph()
+        self.root.plot(graph)
+        img_bytes = BytesIO(graph.pipe(format='png'))
+        image = Image.open(img_bytes)
+        image.show()
+        return graph
 
