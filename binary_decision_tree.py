@@ -151,8 +151,5 @@ class BinaryDecisionTree():
     def plot(self):
         graph = graphviz.Graph()
         self.root.plot(graph)
-        img_bytes = BytesIO(graph.pipe(format='png'))
-        image = Image.open(img_bytes)
-        image.show()
         return graph
 
