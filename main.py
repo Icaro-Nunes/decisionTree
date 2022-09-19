@@ -1,6 +1,5 @@
 from io import BytesIO
-from binary_decision_tree import BinaryDecisionTree
-# from decision_tree import CategoricalDecisionTree
+from binary_decision_tree import CategoricalDecisionTree, DecisionTree
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from PIL import Image
@@ -25,7 +24,7 @@ y=data[clmns[-1]]
 lencoder = LabelEncoder()
 # y = lencoder.fit(y)
 
-tree = BinaryDecisionTree()
+tree = CategoricalDecisionTree()
 
 tree.fit(x=x, y=y)
 
@@ -72,7 +71,7 @@ data = pd.DataFrame(
 x = data[clmns[:-1]]
 y = data[clmns[-1]]
 
-tree = BinaryDecisionTree()
+tree = DecisionTree()
 tree.fit(x, y)
 tree.print()
 tree.plot()

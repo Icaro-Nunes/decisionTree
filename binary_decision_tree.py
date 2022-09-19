@@ -104,33 +104,89 @@ def drange(start, stop, step):
         yield r
         r += step
 
-class BinaryDecisionTree():
-    def __init__(self, threshold_step=0.1):
-        self.numerical_types = [int, float, numpy.int64, numpy.int32, numpy.float64, numpy.float32, numpy.float16, numpy.double]
-        self.NON_CATEGORICAL_PERCENT = 0.7
-        self.threshold_step = threshold_step
+class CategoricalDecisionTree():
+    def __init__(self):
         self.root = None
         self.string_tree = None
 
-    def make_threshold_sequence(self, min, max):
-        return drange(min, max, self.threshold_step)
+    def _build_tree_node(self, x_subset, y_subset, unused_features: list):
+        subset = x_subset.join(y_subset)
+        distribution = calculate_distribution(x_subset, y_subset, self.labels[0])
+
+        estimated_label = self.labels[0] if distribution > 0.5 else self.labels[1]
+
+        if len(unused_features) == 0:
+            return DecisionTreeTerminalNode(
+                label=estimated_label
+            )
+
+        if distribution == 1.0 or distribution == 0.0:
+            return DecisionTreeTerminalNode(
+                label=estimated_label
+            )
+
+        best_feature = max(
+            map(
+            lambda feature: (feature['name'], feature['information_gain'](subset, feature['name'], y_subset.name))
+            , unused_features
+            ), key=lambda it: it[1][1]
+        )
+
+        feature = best_feature[0]
+        info_gain = best_feature[1][1]
+
+        feature_values = x_subset[feature].unique()
+        
+        unused_features_passed = [feat for feat in unused_features if feat['name'] != feature]
+
+        children = {
+            value: self._build_tree_node(
+                x_subset[x_subset[feature] == value], subset[subset[feature] == value][y_subset.name], unused_features_passed
+            ) for value in feature_values
+        }
+
+        return DecisionTreeNode(
+            feature=feature,
+            children=children
+        )
+    
+    def evaluate_information_gain_method_for_features(self, x: pd.DataFrame):
+        return [{'name': feature, 'information_gain': information_gain} for feature in x]
 
 
-    def numerical_information_gain(self, df: pd.DataFrame, known_param, class_axis):
-        column = df[known_param]
-        min = column.min()
-        max = column.max()
-        best_information_gain = (0.0, 0.0)
-        for threshold in self.make_threshold_sequence(min, max):
-            case_df = df.drop(columns=[known_param])
-            case_df[known_param] = column.transform(lambda it: it > threshold)
-            info_gain = information_gain(case_df, known_param, class_axis)[1]
-            if info_gain > best_information_gain[1]:
-                best_information_gain = (threshold, info_gain)
-        return best_information_gain
+    def fit(self, x: pd.DataFrame, y, labels=None):
+        if labels == None:
+            if type(y) == pd.Series:
+                self.labels = list(y.unique())
+            else:
+                self.labels = reduce(operator.eq, y)
+        else:
+            self.labels = labels
+        
+        features = self.evaluate_information_gain_method_for_features(x)
 
+        self.root = self._build_tree_node(x, y, features)
+        
+    
+    def predict(self, x):
+        return self.root.visit(x)
 
-    def __build_tree_node(self, x_subset, y_subset, unused_features: list):
+    def print(self):
+        self.root.print('root')
+    
+    def plot(self):
+        graph = graphviz.Graph()
+        self.root.plot(graph)
+        return graph
+
+class DecisionTree(CategoricalDecisionTree):
+    def __init__(self, threshold_step=0.1) -> None:
+        self.numerical_types = [int, float, numpy.int64, numpy.int32, numpy.float64, numpy.float32, numpy.float16, numpy.double]
+        self.NON_CATEGORICAL_PERCENT = 0.7
+        self.threshold_step = threshold_step
+        super().__init__()
+    
+    def _build_tree_node(self, x_subset, y_subset, unused_features: list):
         subset = x_subset.join(y_subset)
         distribution = calculate_distribution(x_subset, y_subset, self.labels[0])
 
@@ -163,10 +219,10 @@ class BinaryDecisionTree():
 
         if threshold != None:
             children = {
-                f"> {threshold}": self.__build_tree_node(
+                f"> {threshold}": self._build_tree_node(
                     x_subset[x_subset[feature] > threshold], subset[subset[feature] > threshold][y_subset.name], unused_features_passed
                 ),
-                f"<= {threshold}": self.__build_tree_node(
+                f"<= {threshold}": self._build_tree_node(
                     x_subset[x_subset[feature] <= threshold], subset[subset[feature] <= threshold][y_subset.name], unused_features_passed
                 )
             }
@@ -177,7 +233,7 @@ class BinaryDecisionTree():
             )
 
         children = {
-            value: self.__build_tree_node(
+            value: self._build_tree_node(
                 x_subset[x_subset[feature] == value], subset[subset[feature] == value][y_subset.name], unused_features_passed
             ) for value in feature_values
         }
@@ -187,7 +243,7 @@ class BinaryDecisionTree():
             children=children
         )
     
-    def evaluate_categorical_and_numerical_information_gain(self, x: pd.DataFrame):
+    def evaluate_information_gain_method_for_features(self, x: pd.DataFrame):
         features = []
         for feature in x:
             feat_info = {'name': feature}
@@ -198,29 +254,23 @@ class BinaryDecisionTree():
             features.append(feat_info)
         return features
 
+    def make_threshold_sequence(self, min, max):
+        return drange(min, max, self.threshold_step)
 
-    def fit(self, x: pd.DataFrame, y, labels=None):
-        if labels == None:
-            if type(y) == pd.Series:
-                self.labels = list(y.unique())
-            else:
-                self.labels = reduce(operator.eq, y)
-        else:
-            self.labels = labels
-        
-        features = self.evaluate_categorical_and_numerical_information_gain(x)
 
-        self.root = self.__build_tree_node(x, y, features)
-        
+    def numerical_information_gain(self, df: pd.DataFrame, known_param, class_axis):
+        column = df[known_param]
+        min = column.min()
+        max = column.max()
+        best_information_gain = (0.0, 0.0)
+        for threshold in self.make_threshold_sequence(min, max):
+            case_df = df.drop(columns=[known_param])
+            case_df[known_param] = column.transform(lambda it: it > threshold)
+            info_gain = information_gain(case_df, known_param, class_axis)[1]
+            if info_gain > best_information_gain[1]:
+                best_information_gain = (threshold, info_gain)
+        return best_information_gain
+
+
     
-    def predict(self, x):
-        return self.root.visit(x)
-
-    def print(self):
-        self.root.print('root')
-    
-    def plot(self):
-        graph = graphviz.Graph()
-        self.root.plot(graph)
-        return graph
 
