@@ -1,7 +1,9 @@
+from io import BytesIO
 from binary_decision_tree import BinaryDecisionTree
 # from decision_tree import CategoricalDecisionTree
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from PIL import Image
 
 clmns = ['Sexo', 'Idade < 26', 'Tem carro', 'É assinante?']
 
@@ -47,5 +49,35 @@ print(result)
 
 tree.print()
 tree.plot()
+
+image = Image.open(BytesIO(tree.plot().pipe(format='png')))
+image.show()
+
+clmns = ['A', 'B', 'C', 'X']
+data = pd.DataFrame(
+    [
+        (1, 1,  5.0, 'P'),
+        (0, 1, 11.5, 'P'),
+        (0, 1, 13.5, 'P'),
+        (1, 0, 15.0, 'P'),
+        (1, 0, 13.0, 'P'),
+        (0, 0, 11.5, 'N'),
+        (0, 1,  5.0, 'N'),
+        (1, 0,  9.5, 'N'),
+        (0, 0,  2.0, 'N'),
+        (1, 0,  8.0, 'N')
+    ], columns=clmns
+)
+
+x = data[clmns[:-1]]
+y = data[clmns[-1]]
+
+tree = BinaryDecisionTree()
+tree.fit(x, y)
+tree.print()
+tree.plot()
+
+image = Image.open(BytesIO(tree.plot().pipe(format='png')))
+image.show()
 
 print("end")
