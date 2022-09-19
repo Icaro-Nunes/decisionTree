@@ -1,5 +1,5 @@
 from io import BytesIO
-from binary_decision_tree import CategoricalDecisionTree, DecisionTree
+from decision_tree import CategoricalDecisionTree, DecisionTree
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from PIL import Image
