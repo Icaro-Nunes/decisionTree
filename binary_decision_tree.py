@@ -1,11 +1,9 @@
 from functools import reduce
-from io import BytesIO
 import math
 import operator
 import pandas as pd
 import graphviz
 import numpy
-from PIL import Image
 
 def entropy(df, param):
   return (
